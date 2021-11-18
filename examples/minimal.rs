@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 fn main() {
-    App::new()
+    App::build()
         .insert_resource(WindowDescriptor {
             vsync: false, // Disabled for this demo to remove vsync as a source of input latency
             ..Default::default()
@@ -40,7 +40,7 @@ fn setup(
         .insert_bundle(bevy_mod_picking::PickableBundle::default())
         .insert(bevy_transform_gizmo::GizmoTransformable);
     // light
-    commands.spawn_bundle(PointLightBundle {
+    commands.spawn_bundle(LightBundle {
         transform: Transform::from_xyz(4.0, 8.0, 4.0),
         ..Default::default()
     });

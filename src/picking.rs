@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_mod_picking::PickingPluginsState;
 
 use crate::TransformGizmo;
 
@@ -9,8 +10,8 @@ pub type PickableGizmo = bevy_mod_raycast::RayCastMesh<GizmoRaycastSet>;
 /// the `bevy_mod_picking` plugin.
 pub struct GizmoPickingPlugin;
 impl Plugin for GizmoPickingPlugin {
-    fn build(&self, app: &mut App) {
-        app.init_resource::<bevy_mod_raycast::PluginState<GizmoRaycastSet>>()
+    fn build(&self, app: &mut AppBuilder) {
+        app.init_resource::<PickingPluginsState>()
             .add_system_to_stage(
                 CoreStage::PreUpdate,
                 bevy_mod_raycast::build_rays::<GizmoRaycastSet>
@@ -58,7 +59,7 @@ fn update_gizmo_raycast_with_cursor(
 
 /// Disable the picking plugin when the mouse is over one of the gizmo handles.
 fn disable_mesh_picking_during_gizmo_hover(
-    mut picking_state: ResMut<bevy_mod_picking::PickingPluginState>,
+    mut picking_state: ResMut<PickingPluginsState>,
     query: Query<&bevy_mod_raycast::RayCastSource<GizmoRaycastSet>>,
     gizmo_query: Query<&TransformGizmo>,
 ) {
@@ -73,5 +74,8 @@ fn disable_mesh_picking_during_gizmo_hover(
         return;
     };
     // Set the picking state based on current user interaction state
-    picking_state.enabled = gizmo_inactive && not_hovering_gizmo;
+    let enable = gizmo_inactive && not_hovering_gizmo;
+    picking_state.enable_picking = enable;
+    picking_state.enable_highlighting = enable;
+    picking_state.enable_interacting = enable;
 }
