@@ -28,12 +28,12 @@ pub fn normalize(
 ) {
     // TODO: can be improved by manually specifying the active camera to normalize against. The
     // majority of cases will only use a single camera for this viewer, so this is sufficient.
-    let camera_position = camera_query
-        .iter()
-        .last()
-        .cloned()
-        .expect("No camera present in scene");
-
+    let camera_position = if let Some(pos) = camera_query.iter().next() {
+        pos.clone()
+    } else {
+        error!("failed to find camera");
+        return;
+    };
     for mut transform in normalize_query.iter_mut() {
         let distance = -camera_position
             .compute_matrix()

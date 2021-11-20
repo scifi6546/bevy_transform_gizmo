@@ -135,17 +135,20 @@ fn drag_gizmo(
     let (mut gizmo, gizmo_global) = if let Some(gizmo_result) = gizmo_query.iter_mut().last() {
         gizmo_result
     } else {
+        error!("failed to get gizmo");
         return;
     };
     let gizmo_origin = gizmo_global.translation;
     let picking_camera = if let Some(cam) = pick_cam.iter().last() {
         cam
     } else {
+        error!("failed to find pickimg camera");
         return;
     };
     let picking_ray = if let Some(ray) = picking_camera.ray() {
         ray
     } else {
+        error!("failed to get ray");
         return;
     };
     if let Some(interaction) = gizmo.current_interaction {
