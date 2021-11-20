@@ -74,8 +74,5 @@ fn disable_mesh_picking_during_gizmo_hover(
         return;
     };
     // Set the picking state based on current user interaction state
-    let enable = gizmo_inactive && not_hovering_gizmo;
-    picking_state.enable_picking = enable;
-    picking_state.enable_highlighting = enable;
-    picking_state.enable_interacting = enable;
+    picking_state.enable_interacting = gizmo_inactive && not_hovering_gizmo;
 }

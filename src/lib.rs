@@ -184,9 +184,11 @@ fn drag_gizmo(
                         return;
                     }
                 };
+
                 let selected_handle_vec = drag_start - gizmo_origin;
                 let new_handle_vec = cursor_vector.dot(selected_handle_vec.normalize())
                     * selected_handle_vec.normalize();
+
                 let translation = new_handle_vec - selected_handle_vec;
                 transform_queries
                     .q0_mut()
@@ -276,7 +278,6 @@ fn grab_gizmo(
                     if let Ok(gizmo_interaction) = hover_query.get(*child) {
                         gizmo.current_interaction = Some(*gizmo_interaction);
                         gizmo_clicked = true;
-                        //info!("Gizmo handle {:?} selected", gizmo_interaction);
                     }
                 }
             }
@@ -306,7 +307,6 @@ fn grab_gizmo(
                     to: *transform,
                     interaction,
                 };
-                //info!("{:?}", event);
                 gizmo_events.send(event);
                 *gizmo = TransformGizmo::default();
             }
