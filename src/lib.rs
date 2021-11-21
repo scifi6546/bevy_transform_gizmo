@@ -247,7 +247,43 @@ fn drag_gizmo(
                         }
                     });
             }
-            TransformGizmoInteraction::ScaleAxis(_) => (),
+            TransformGizmoInteraction::ScaleAxis(axis) => {
+                let cursor_plane_intersection = if let Some(intersection) = picking_camera
+                    .intersect_primitive(Primitive3d::Plane {
+                        normal: picking_ray.direction(),
+                        point: gizmo_origin,
+                    }) {
+                    intersection.position()
+                } else {
+                    return;
+                };
+                let cursor_vector: Vec3 = cursor_plane_intersection - gizmo_origin;
+                let drag_start = match &gizmo.drag_start {
+                    Some(drag_start) => *drag_start,
+                    None => {
+                        let handle_vector = axis;
+                        let cursor_projected_onto_handle = cursor_vector
+                            .dot(handle_vector.normalize())
+                            * handle_vector.normalize();
+                        gizmo.drag_start = Some(gizmo_origin + cursor_projected_onto_handle);
+                        return;
+                    }
+                };
+
+                let selected_handle_vec = drag_start - gizmo_origin;
+                let new_handle_vec = cursor_vector.dot(selected_handle_vec.normalize())
+                    * selected_handle_vec.normalize();
+                transform_queries
+                    .q0_mut()
+                    .iter_mut()
+                    .filter(|(s, _t, _i)| s.selected())
+                    .for_each(|(_s, mut t, i)| {
+                        let scaling =
+                            i.transform.scale * (new_handle_vec + Vec3::new(1.0, 1.0, 1.0));
+                        *t = i.transform;
+                        t.scale = scaling;
+                    });
+            }
         }
     }
 }
@@ -340,7 +376,7 @@ fn place_gizmo(
         visible.is_visible = selected_items > 0;
     }
 }
-
+const SCALE_CUBE_SCALE: f32 = 0.15;
 /// Startup system that builds the procedural mesh and materials of the gizmo.
 fn build_gizmo(
     mut commands: Commands,
@@ -369,7 +405,9 @@ fn build_gizmo(
         ring_radius: 0.015,
         ..Default::default()
     }));
-    //let cube_mesh = meshes.add(Mesh::from(shape::Cube { size: 0.15 }));
+    let scale_mesh = meshes.add(Mesh::from(shape::Cube {
+        size: SCALE_CUBE_SCALE,
+    }));
     // Define gizmo materials
     let gizmo_material_x = materials.add(StandardMaterial {
         unlit: true,
@@ -581,42 +619,41 @@ fn build_gizmo(
                 .insert(TransformGizmoInteraction::RotateAxis(Vec3::Z))
                 .insert(GizmoPass)
                 .remove::<MainPass>();
-            /*
-                        // Scaling Handles
-                        parent
-                            .spawn_bundle(PbrBundle {
-                                mesh: cube_mesh.clone(),
-                                material: gizmo_material_x_selectable.clone(),
-                                transform: Transform::from_translation(Vec3::new(arc_radius, 0.0, 0.0)),
-                                ..Default::default()
-                            })
-                            .insert(PickableGizmo::default())
-                            .insert(TransformGizmoInteraction::ScaleAxis(Vec3::X))
-                            .insert(GizmoPass)
-                            .remove::<MainPass>();
-                        parent
-                            .spawn_bundle(PbrBundle {
-                                mesh: cube_mesh.clone(),
-                                material: gizmo_material_y_selectable.clone(),
-                                transform: Transform::from_translation(Vec3::new(0.0, arc_radius, 0.0)),
-                                ..Default::default()
-                            })
-                            .insert(PickableGizmo::default())
-                            .insert(TransformGizmoInteraction::ScaleAxis(Vec3::Y))
-                            .insert(GizmoPass)
-                            .remove::<MainPass>();
-                        parent
-                            .spawn_bundle(PbrBundle {
-                                mesh: cube_mesh.clone(),
-                                material: gizmo_material_z_selectable.clone(),
-                                transform: Transform::from_translation(Vec3::new(0.0, 0.0, arc_radius)),
-                                ..Default::default()
-                            })
-                            .insert(PickableGizmo::default())
-                            .insert(TransformGizmoInteraction::ScaleAxis(Vec3::Z))
-                            .insert(GizmoPass)
-                            .remove::<MainPass>();
-            */
+
+            // Scaling Handles
+            parent
+                .spawn_bundle(PbrBundle {
+                    mesh: scale_mesh.clone(),
+                    material: gizmo_material_x_selectable.clone(),
+                    transform: Transform::from_translation(Vec3::new(arc_radius, 0.0, 0.0)),
+                    ..Default::default()
+                })
+                .insert(PickableGizmo::default())
+                .insert(TransformGizmoInteraction::ScaleAxis(Vec3::X))
+                .insert(GizmoPass)
+                .remove::<MainPass>();
+            parent
+                .spawn_bundle(PbrBundle {
+                    mesh: scale_mesh.clone(),
+                    material: gizmo_material_y_selectable.clone(),
+                    transform: Transform::from_translation(Vec3::new(0.0, arc_radius, 0.0)),
+                    ..Default::default()
+                })
+                .insert(PickableGizmo::default())
+                .insert(TransformGizmoInteraction::ScaleAxis(Vec3::Y))
+                .insert(GizmoPass)
+                .remove::<MainPass>();
+            parent
+                .spawn_bundle(PbrBundle {
+                    mesh: scale_mesh.clone(),
+                    material: gizmo_material_z_selectable.clone(),
+                    transform: Transform::from_translation(Vec3::new(0.0, 0.0, arc_radius)),
+                    ..Default::default()
+                })
+                .insert(PickableGizmo::default())
+                .insert(TransformGizmoInteraction::ScaleAxis(Vec3::Z))
+                .insert(GizmoPass)
+                .remove::<MainPass>();
         })
         .insert(GizmoPass)
         .remove::<MainPass>();
